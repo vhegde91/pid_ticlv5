@@ -3,7 +3,21 @@ import numpy as np
 import sys
 
 path = sys.argv[1]
+def makePlots(**kwargs):
+    import ROOT as rt
+    df = rt.RDF.FromNumpy(kwargs)    
+    hists = []
+    for k, val in kwargs.items():
+        h1 = df.Histo1D((f"{k}",f"{k}",100, 0, 1000),f"{k}")
+        hists.append(h1)
 
+    if "true_energy" in df.GetColumnNames():
+        df = df.Define("RawRespSharedE","true_enfrac/true_energy")
+        hists.append(df.Histo2D(("RawRespSharedEvsTrueE","Shared energy Sum/True energy vs True energy;True Energy [GeV];#frac{Shared Energy Sum}{True Energy}",100, 0, 1000, 50, 0, 5),"true_energy", "RawRespSharedE"))
+        hists.append(df.Profile1D(("p_RawRespSharedEvsTrueE","Profile Shared energy Sum/True energy vs True energy;True Energy [GeV];#frac{Shared Energy Sum}{True Energy}",100, 0, 1000),"true_energy", "RawRespSharedE"))
+    fout = rt.TFile("hists_validation.root","recreate")
+    for h in hists: h.Write()
+        
 with h5py.File(path, 'r') as f:
     print("=" * 60)
     print("FILE:", path)
@@ -23,12 +37,16 @@ with h5py.File(path, 'r') as f:
     total = int(f.attrs.get('num_tracksters', 0))
     print(f"\n--- Spot checks (first 5 entries) ---")
 
+    makePlots(true_energy=f['true_energy'][:],
+              true_enfrac = f['true_enfrac'][:])
+              
     features    = f['features'][:5]
     true_pid    = f['true_pid'][:5]
     true_energy = f['true_energy'][:5]
     true_enfrac = f['true_enfrac'][:5]
     num_clusters= f['num_clusters'][:5]
     clusters    = f['clusters'][:5]
+
     print("clusters ", clusters)
     for i in range(5):
         print(f"\n  [{i}] features={features[i]}  pid={true_pid[i]}"

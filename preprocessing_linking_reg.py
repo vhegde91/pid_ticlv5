@@ -199,12 +199,15 @@ def process_root_file(file_path, partial_dir):
 
                     # Pass 1: collect all candidates that pass basic cuts
                     candidates = []  # list of (combined_score, local_idx, trackster_idx)
-
+                    ev_ts_energy_sum = -1.0
+                    
                     for local_idx in range(len(ts_idx_np)):
                         if shared_e_np[local_idx] <= 0:
                             continue
 
                         trackster_idx = int(ts_idx_np[local_idx])
+
+                        ev_ts_energy_sum += ev_ts_energy[trackster_idx] # sum of energy of tracksters
 
                         # reco to sim score 
                         reco_score = 1.0
@@ -238,7 +241,8 @@ def process_root_file(file_path, partial_dir):
                     for (combined_score, local_idx, trackster_idx,
                          reco_score, sim_score, shared_e) in best:
 
-                        true_enfrac = (shared_e / ev_ts_energy[trackster_idx]) * true_en
+                        # true_enfrac = (shared_e / ev_ts_energy[trackster_idx]) * true_en
+                        true_enfrac = (ev_ts_energy[trackster_idx]/ev_ts_energy_sum) * true_en
 
                         # Build cluster array (vectorised)
                         v_idx_raw = tracksters['vertices_indexes'][event_idx][trackster_idx]
